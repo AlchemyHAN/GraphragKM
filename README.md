@@ -34,7 +34,7 @@ graphragkm run -i input.pdf
 After execution, the program will generate the following files in the `output` folder in the current directory:
 
 - `ontology.owl`: The generated OWL ontology file.
-- `uml_model.uml`: The UML class diagram file (StarUML format).
+- `uml_model.puml`: The UML class diagram file (StarUML format).
 
 ### Configuration
 
