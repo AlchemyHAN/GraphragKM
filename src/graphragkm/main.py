@@ -1,5 +1,5 @@
 """
-graphragkm - 主模块
+graphragkm - Main module
 """
 
 import asyncio
@@ -28,23 +28,23 @@ console = Console()
 
 
 def load_graphrag_configs(config: Config, project_dir: Path) -> dict:
-    """加载并更新GraphRAG配置
+    """Load and update GraphRAG configuration
 
     Args:
-        config: 配置对象
-        project_dir: 项目根目录路径
+        config: Configuration object
+        project_dir: Project root directory path
 
     Returns:
-        更新后的GraphRAG配置字典
+        Updated GraphRAG configuration dictionary
     """
 
-    # 加载GraphRAG配置
+    # Load GraphRAG configuration
     graphrag_settings_path = project_dir / "settings.yaml"
 
     with open(graphrag_settings_path, "r", encoding="utf-8") as f:
         graphrag_settings = yaml.safe_load(f)
 
-    # 更新模型配置
+    # Update model configuration
     chat_model = graphrag_settings["models"]["default_chat_model"]
     embedding_model = graphrag_settings["models"]["default_embedding_model"]
 
@@ -66,37 +66,37 @@ def load_graphrag_configs(config: Config, project_dir: Path) -> dict:
         }
     )
 
-    console.print("[green]✓ GraphRAG配置加载完成[/]")
+    console.print("[green]✓ GraphRAG configuration loaded[/]")
     return graphrag_settings
 
 
 def check_config(config_path: Path) -> bool:
-    """检查配置是否完整"""
+    """Check if configuration is complete"""
     try:
         config = Config.from_yaml(str(config_path))
         is_valid, error_msg = config.validate()
 
         if not is_valid:
-            console.print(f"[red]错误: {error_msg}[/]")
+            console.print(f"[red]Error: {error_msg}[/]")
             return False
 
         return True
 
     except FileNotFoundError:
-        console.print(f"[red]错误: 找不到配置文件 {config_path}[/]")
+        console.print(f"[red]Error: Configuration file not found {config_path}[/]")
         return False
     except yaml.YAMLError:
-        console.print(f"[red]错误: 配置文件格式不正确 {config_path}[/]")
+        console.print(f"[red]Error: Invalid configuration file format {config_path}[/]")
         return False
 
 
 def ensure_config() -> bool:
-    """确保配置文件存在且完整"""
+    """Ensure configuration file exists and is complete"""
     config_dir = Path(__file__).parent.parent.parent
     config_path = config_dir / CONFIG_FILENAME
 
     if not config_path.exists():
-        console.print("[yellow]未找到配置文件，正在创建模板...[/]")
+        console.print("[yellow]Configuration file not found, creating template...[/]")
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         template = {
@@ -122,8 +122,8 @@ def ensure_config() -> bool:
             yaml.dump(template, f, allow_unicode=True)
 
         console.print(
-            f"""[yellow]已创建配置文件模板: {config_path}
-请编辑配置文件，填入正确的配置信息后重新运行程序。[/]"""
+            f"""[yellow]Configuration template created: {config_path}
+Please edit the configuration file, fill in the correct information and run the program again.[/]"""
         )
         return False
 
@@ -131,20 +131,20 @@ def ensure_config() -> bool:
 
 
 async def build_graphrag_index(graphrag_config):
-    """构建GraphRAG索引
+    """Build GraphRAG index
 
     Args:
-        graphrag_config: GraphRAG配置对象
+        graphrag_config: GraphRAG configuration object
     """
     import graphrag.api as api
 
-    console.print("[blue]开始构建GraphRAG索引...[/]")
+    console.print("[blue]Starting to build GraphRAG index...[/]")
     index_result = await api.build_index(config=graphrag_config)
 
     with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
     ) as progress:
         for workflow_result in index_result:
             status = (
@@ -159,21 +159,21 @@ async def build_graphrag_index(graphrag_config):
 
 
 def process_markdown_files(
-        progress: Progress,
-        md_processor: MarkdownProcessor,
-        md_files: list[Path],
-        output_dir: Path,
+    progress: Progress,
+    md_processor: MarkdownProcessor,
+    md_files: list[Path],
+    output_dir: Path,
 ) -> None:
-    """处理所有Markdown文件
+    """Process all Markdown files
 
     Args:
-        progress: 进度条对象
-        md_processor: Markdown处理器
-        md_files: Markdown文件列表
-        output_dir: 输出目录
+        progress: Progress bar object
+        md_processor: Markdown processor
+        md_files: List of Markdown files
+        output_dir: Output directory
     """
     md_task = progress.add_task(
-        "[cyan]处理Markdown文件中的图片[/]", total=len(md_files)
+        "[cyan]Processing images in Markdown files[/]", total=len(md_files)
     )
 
     for md_file in md_files:
@@ -182,15 +182,15 @@ def process_markdown_files(
             md_processor.process_markdown_file(str(md_file), str(output_path))
             progress.update(md_task, advance=1)
         except Exception as e:
-            console.print(f"[red]错误: 处理失败 {md_file.name}: {str(e)}[/]")
+            console.print(f"[red]Error: Processing failed {md_file.name}: {str(e)}[/]")
 
 
 def prepare_graphrag_input(output_dir: Path, graphrag_input_dir: Path) -> None:
-    """准备GraphRAG输入文件
+    """Prepare GraphRAG input files
 
     Args:
-        output_dir: 输出目录
-        graphrag_input_dir: GraphRAG输入目录
+        output_dir: Output directory
+        graphrag_input_dir: GraphRAG input directory
     """
     if not graphrag_input_dir.exists():
         graphrag_input_dir.mkdir(parents=True, exist_ok=True)
@@ -201,92 +201,98 @@ def prepare_graphrag_input(output_dir: Path, graphrag_input_dir: Path) -> None:
 
 
 async def run_inference_pipeline(inference_processor: InferenceProcessor):
-    """进行推理
+    """Run inference
 
     Args:
-        inference_processor: 推理处理器实例
+        inference_processor: Inference processor instance
     """
-    console.print("[cyan]开始推理...[/]")
+    console.print("[cyan]Starting inference...[/]")
 
-    # 推理实体属性
+    # Infer entity attributes
     await inference_processor.infer_all_attributes()
 
-    # 推理实体关系
+    # Infer entity relationships
     await inference_processor.infer_all_relationships()
 
-    # 计算实体嵌入
+    # Compute entity embeddings
     await inference_processor.compute_all_embeddings()
 
-    # 聚类
+    # Clustering
     await inference_processor.cluster_entities()
 
-    console.print("[green]✓ 推理执行完成[/]")
+    console.print("[green]✓ Inference completed[/]")
 
 
 def main_entry(input_pdf: Optional[str] = None):
-    """AI 本体生成工具"""
+    """AI Ontology Generation Tool"""
     console.print("[cyan]===== GraphragKM =====\n[/]")
 
     if not ensure_config():
         sys.exit(1)
-    console.print("[green]✓ 配置检查通过[/]")
+    console.print("[green]✓ Configuration check passed[/]")
 
-    # 初始化路径
+    # Initialize paths
     project_dir = Path(__file__).parent.parent.parent
     config_file = project_dir / CONFIG_FILENAME
     output_dir = project_dir / DEFAULT_OUTPUT_DIR
     config = Config.from_yaml(str(config_file))
 
-    # 交互式获取输入文件
+    # Interactive input file acquisition
     if not input_pdf:
         input_pdf = click.prompt(
-            "请输入PDF文件路径\n", type=click.Path(exists=True, dir_okay=False)
+            "Please enter PDF file path\n", type=click.Path(exists=True, dir_okay=False)
         )
 
     if input_pdf is not None:
         input_pdf_path = Path(input_pdf)
     else:
-        console.print("[red]错误: 未提供PDF文件路径[/]")
+        console.print("[red]Error: No PDF file path provided[/]")
         sys.exit(1)
 
     output_dir_path = Path(output_dir)
     input_dir_path = project_dir / "input"
 
-    # 清理输出目录
+    # Clean output directory
     if output_dir_path.exists():
-        console.print(f"[yellow]警告: 输出目录已存在，是否清空？[/]")
+        console.print(
+            f"[yellow]Warning: Output directory exists, do you want to clear?[/]"
+        )
         response = click.prompt(
-            "请输入 (y/n)", type=click.Choice(["y", "n"], case_sensitive=False)
+            "Please enter (y/n)", type=click.Choice(["y", "n"], case_sensitive=False)
         )
         if response.lower() == "y":
             shutil.rmtree(output_dir_path)
 
     with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
     ) as progress:
-        # 处理PDF
+        # Process PDF
         pdf_task = progress.add_task(
-            f"[cyan]处理PDF文件: {input_pdf_path.name}[/]", total=None
+            f"[cyan]Processing PDF file: {input_pdf_path.name}[/]", total=None
         )
 
         pdf_processor = PDFProcessor(str(config_file))
         pdf_processor.process_pdf(str(input_pdf_path), str(output_dir_path))
         progress.update(pdf_task, completed=True)
 
-        # 处理Markdown
+        # Process Markdown
         md_processor = MarkdownProcessor(str(output_dir_path))
         md_files = list(output_dir_path.glob("*.md"))
 
         if not md_files:
-            console.print("[yellow]警告: 输出目录中没有找到Markdown文件[/]")
+            console.print(
+                "[yellow]Warning: No Markdown files found in output directory[/]"
+            )
             return
 
         process_markdown_files(progress, md_processor, md_files, output_dir_path)
 
-        # 初始化GraphRAG
-        init_task = progress.add_task("[cyan]初始化 GraphRAG 项目[/]", total=None)
+        # Initialize GraphRAG
+        init_task = progress.add_task(
+            "[cyan]Initializing GraphRAG project[/]", total=None
+        )
         from graphrag.cli.initialize import initialize_project_at
 
         initialize_project_at(project_dir, True)
@@ -294,9 +300,7 @@ def main_entry(input_pdf: Optional[str] = None):
 
         prepare_graphrag_input(output_dir_path, input_dir_path)
 
-        index_task = progress.add_task(
-            "[cyan]构建 GraphRAG 索引[/]", total=None
-        )
+        index_task = progress.add_task("[cyan]Building GraphRAG index[/]", total=None)
 
         graphrag_settings = load_graphrag_configs(config, project_dir)
         from graphrag.config.create_graphrag_config import create_graphrag_config
@@ -307,16 +311,16 @@ def main_entry(input_pdf: Optional[str] = None):
 
         progress.update(index_task, completed=True)
 
-    # 执行GraphRAG索引构建
+    # Execute GraphRAG index building
     asyncio.run(build_graphrag_index(graphrag_config))
-    console.print("[green]✓ GraphRAG 索引构建完成！[/]")
+    console.print("[green]✓ GraphRAG index building completed![/]")
 
-    # 处理推理和生成
+    # Process inference and generation
     inference_processor = InferenceProcessor(config, output_dir_path)
     asyncio.run(run_inference_pipeline(inference_processor))
 
-    # 生成 OWL 和 UML
-    console.print("[cyan]开始生成本体和UML模型...[/]")
+    # Generate OWL and UML
+    console.print("[cyan]Starting to generate ontology and UML model...[/]")
 
     owl_generator = OWLGenerator(config=config, input_path=str(output_dir_path))
     owl_generator.run()
@@ -324,9 +328,9 @@ def main_entry(input_pdf: Optional[str] = None):
     uml_generator = PlantUMLGenerator(str(output_dir_path))
     uml_generator.run()
 
-    console.print("\n[green]✓ 所有步骤处理完成！[/]")
-    console.print(f"[blue]处理结果保存在: {output_dir_path.absolute()}[/]")
-    console.print("[cyan]===== 处理结束 =====\n[/]")
+    console.print("\n[green]✓ All steps processed![/]")
+    console.print(f"[blue]Processing results saved in: {output_dir_path.absolute()}[/]")
+    console.print("[cyan]===== Processing ended =====\n[/]")
 
 
 if __name__ == "__main__":

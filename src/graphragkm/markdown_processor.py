@@ -6,46 +6,46 @@ import numpy as np
 from PIL import Image
 from rich.console import Console
 
-# 创建控制台实例
+# Create console instance
 console = Console()
 
 
 class MarkdownProcessor:
     def __init__(self, base_path: str):
         """
-        初始化Markdown处理器
+        Initialize Markdown processor
 
         Args:
-            base_path: Markdown文件所在的基础路径
+            base_path: Base path where Markdown files are located
         """
         from easyocr import Reader
 
         self.base_path = Path(base_path)
-        console.print("[blue]正在初始化OCR引擎...[/]")
+        console.print("[blue]Initializing OCR engine...[/]")
         self.reader = Reader(["ch_sim", "en"], gpu=False)
 
     def process_markdown_file(self, input_path: str, output_path: str) -> None:
-        """处理Markdown文件"""
+        """Process Markdown file"""
         input_path = Path(input_path)
         if not input_path.exists():
-            raise FileNotFoundError(f"找不到文件: {input_path}")
+            raise FileNotFoundError(f"File not found: {input_path}")
 
         content = input_path.read_text(encoding="utf-8")
         processed_content = self.replace_images_with_text(content)
 
         Path(output_path).write_text(processed_content, encoding="utf-8")
-        console.print(f"[green]✓ Markdown文件处理完成: {output_path}[/]")
+        console.print(f"[green]✓ Markdown file processing completed: {output_path}[/]")
 
     def replace_images_with_text(self, content: str) -> str:
-        """替换图片为文字"""
-        # 处理Markdown格式的图片
+        """Replace images with text"""
+        # Process Markdown format images
         content = re.sub(
             r"!\[(?P<alt>.*?)\]\((?P<path>.*?)\)(?P<caption>.*?)(?=\n|$)",
             self._process_markdown_image,
             content,
         )
 
-        # 处理HTML格式的图片
+        # Process HTML format images
         content = re.sub(
             r'<img\s+[^>]*?src=["\']([^"\']+)["\'][^>]*>',
             lambda m: self._process_html_image(m.group(1)),
@@ -55,20 +55,22 @@ class MarkdownProcessor:
         return content
 
     def _process_markdown_image(self, match) -> str:
-        """处理Markdown格式的图片匹配"""
+        """Process Markdown format image match"""
         alt = match.group("alt")
         img_path = match.group("path")
         caption = match.group("caption")
 
-        # 获取图片中的文字
+        # Get text from image
         extracted_text = self._extract_text_from_image(img_path)
 
         if not extracted_text:
-            # 如果没有提取到文字，保留原始图片标记
-            console.print(f"[yellow]警告: 无法从图片提取文字: {img_path}[/]")
+            # If no text is extracted, keep the original image tag
+            console.print(
+                f"[yellow]Warning: Unable to extract text from image: {img_path}[/]"
+            )
             return f"![{alt}]({img_path}){caption}"
 
-        # 构建新的文本块，包含原始图片信息和提取的文字
+        # Build new text block, including original image info and extracted text
         result = [
             f"<!-- Original picture: ![{alt}]({img_path}){caption} -->",
             "",
@@ -84,10 +86,12 @@ class MarkdownProcessor:
         return "\n".join(result)
 
     def _process_html_image(self, img_path: str) -> str:
-        """处理HTML格式的图片"""
+        """Process HTML format image"""
         extracted_text = self._extract_text_from_image(img_path)
         if not extracted_text:
-            console.print(f"[yellow]警告: 无法从HTML图片提取文字: {img_path}[/]")
+            console.print(
+                f"[yellow]Warning: Unable to extract text from HTML image: {img_path}[/]"
+            )
             return f'<img src="{img_path}">'
 
         return f"""
@@ -102,10 +106,10 @@ class MarkdownProcessor:
         """
 
     def _extract_text_from_image(self, img_path: str) -> Optional[str]:
-        """从图片中提取文字"""
+        """Extract text from image"""
         full_path = self.base_path / img_path
         if not full_path.exists():
-            console.print(f"[yellow]警告: 找不到图片文件: {full_path}[/]")
+            console.print(f"[yellow]Warning: Image file not found: {full_path}[/]")
             return None
 
         try:
@@ -122,5 +126,7 @@ class MarkdownProcessor:
 
             return text.strip()
         except Exception as e:
-            console.print(f"[red]错误: 处理图片失败 {img_path}: {str(e)}[/]")
+            console.print(
+                f"[red]Error: Failed to process image {img_path}: {str(e)}[/]"
+            )
             return None

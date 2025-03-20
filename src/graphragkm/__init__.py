@@ -1,5 +1,5 @@
 """
-graphragkm - GraphRAG驱动的AI本体生成工具
+graphragkm - GraphRAG-driven AI Ontology Generation Tool
 """
 
 from .inference_processor import InferenceProcessor

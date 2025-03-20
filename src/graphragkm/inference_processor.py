@@ -22,10 +22,10 @@ console = Console()
 
 class InferenceProcessor:
     def __init__(
-            self, config: Config, parquet_input_path: Optional[Union[str, Path]] = None
+        self, config: Config, parquet_input_path: Optional[Union[str, Path]] = None
     ):
         """
-        初始化推理处理器，加载数据文件。
+        Initialize the inference processor and load data files.
         """
         if parquet_input_path is None:
             parquet_input_path = Path(__file__).resolve().parents[2] / "output"
@@ -36,18 +36,18 @@ class InferenceProcessor:
         self.relations_path = self.parquet_input_path / "relationships.parquet"
 
         if not os.path.exists(self.entities_path) or not os.path.exists(
-                self.relations_path
+            self.relations_path
         ):
             raise FileNotFoundError(
                 "Entities or Relationships parquet files not found."
             )
 
-        # 读取数据
-        console.print("[blue]正在加载实体和关系数据...[/]")
+        # Load data
+        console.print("[blue]Loading entities and relationships data...[/]")
         self.entities_df = self._load_entities()
         self.relationships_df = self._load_relationships()
         console.print(
-            f"[green]✓ 已加载 {len(self.entities_df)} 个实体和 {len(self.relationships_df)} 个关系[/]"
+            f"[green]✓ Loaded {len(self.entities_df)} entities and {len(self.relationships_df)} relationships[/]"
         )
 
         self.chat_client = AsyncOpenAI(
@@ -62,7 +62,7 @@ class InferenceProcessor:
         )
 
     def _load_entities(self) -> DataFrame:
-        """读取实体数据并清理"""
+        """Read entity data and clean it"""
         df = pd.read_parquet(self.entities_path)
         df = df[["title", "description"]].copy()
         df["description"] = df["description"].astype(str).apply(self._clean_text)
@@ -70,26 +70,26 @@ class InferenceProcessor:
         return df
 
     def _load_relationships(self) -> DataFrame:
-        """读取关系数据"""
+        """Read relationship data"""
         df = pd.read_parquet(self.relations_path)
         df = self._process_relationships(df)
         return df
 
     @staticmethod
     def _clean_text(text: str) -> str:
-        """清理文本数据，去除换行符、特殊字符等"""
+        """Clean text data, remove line breaks, special characters, etc."""
         text = text.replace("\r", " ").replace("\n", " ")
-        text = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", text)  # 删除不可见字符
+        text = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", text)  # Remove invisible characters
         return text.strip()
 
     def _process_relationships(self, df):
-        """解析关系数据"""
+        """Parse relationship data"""
         if "description" in df.columns:
             df["description"] = df["description"].astype(str).apply(self._clean_text)
         return df
 
     async def _infer_entity_attributes(self, title, desc, progress, task):
-        """使用 Chat Model 生成实体属性，并更新进度条"""
+        """Use Chat Model to generate entity attributes and update progress bar"""
         prompt = f"""
         Given an entity with its description:
         Entity Title: "{title}"
@@ -123,15 +123,15 @@ class InferenceProcessor:
         }
 
     async def infer_all_attributes(self):
-        """并发推理所有实体属性"""
-        console.print("[blue]开始推理实体属性...[/]")
+        """Concurrently infer all entity attributes"""
+        console.print("[blue]Starting entity attribute inference...[/]")
 
-        # 从配置中获取并发请求限制
+        # Get concurrent request limit from config
         max_concurrent = self.config.max_concurrent_requests
 
         with Progress() as progress:
             task = progress.add_task(
-                "[cyan]推理实体属性...", total=len(self.entities_df)
+                "[cyan]Inferring entity attributes...", total=len(self.entities_df)
             )
 
             semaphore = asyncio.Semaphore(max_concurrent)
@@ -150,12 +150,14 @@ class InferenceProcessor:
 
         output_path = self.parquet_input_path / "inferred_attributes.json"
         self._save_to_json(results, output_path)
-        console.print(f"[green]✓ 实体属性推理完成，结果已保存至: {output_path}[/]")
+        console.print(
+            f"[green]✓ Entity attribute inference completed, results saved to: {output_path}[/]"
+        )
 
     async def _infer_relationships(
-            self, source, target, description, progress: Progress, task: TaskID
+        self, source, target, description, progress: Progress, task: TaskID
     ):
-        """使用 Chat Model 生成关系"""
+        """Use Chat Model to generate relationships"""
         prompt = f"""
         Given the following relationship:
         Source Entity: "{source}"
@@ -186,15 +188,15 @@ class InferenceProcessor:
         }
 
     async def infer_all_relationships(self):
-        """并发推理所有关系"""
-        console.print("[blue]开始推理实体间关系...[/]")
+        """Concurrently infer all relationships"""
+        console.print("[blue]Starting relationship inference...[/]")
 
-        # 从配置中获取并发请求限制
+        # Get concurrent request limit from config
         max_concurrent = self.config.max_concurrent_requests
 
         with Progress() as progress:
             task = progress.add_task(
-                "[magenta]推理关系...", total=len(self.relationships_df)
+                "[magenta]Inferring relationships...", total=len(self.relationships_df)
             )
 
             semaphore = asyncio.Semaphore(max_concurrent)
@@ -215,17 +217,21 @@ class InferenceProcessor:
 
         output_path = self.parquet_input_path / "inferred_relations.json"
         self._save_to_json(results, output_path)
-        console.print(f"[green]✓ 关系推理完成，结果已保存至: {output_path}[/]")
+        console.print(
+            f"[green]✓ Relationship inference completed, results saved to: {output_path}[/]"
+        )
 
     async def get_embeddings(self, text_list, batch_size=20):
-        """获取文本嵌入，支持批量请求"""
+        """Get text embeddings, supporting batch requests"""
         embeddings = []
 
         with Progress() as progress:
-            task = progress.add_task("[green]获取嵌入...", total=len(text_list))
+            task = progress.add_task(
+                "[green]Getting embeddings...", total=len(text_list)
+            )
 
             for i in range(0, len(text_list), batch_size):
-                batch = text_list[i: i + batch_size]
+                batch = text_list[i : i + batch_size]
 
                 response = await self.embedding_client.embeddings.create(
                     model=self.config.embedding_model_name, input=batch, dimensions=512
@@ -236,7 +242,7 @@ class InferenceProcessor:
                     batch_embeddings = [item.embedding for item in data]
                     embeddings.extend(batch_embeddings)
                 else:
-                    console.print("[red]错误: 嵌入 API 调用失败[/]")
+                    console.print("[red]Error: Embedding API call failed[/]")
                     return None
 
                 progress.update(task, advance=len(batch))
@@ -244,25 +250,29 @@ class InferenceProcessor:
         return embeddings
 
     async def compute_all_embeddings(self):
-        """计算所有实体的嵌入"""
-        console.print("[blue]开始计算实体嵌入...[/]")
+        """Compute embeddings for all entities"""
+        console.print("[blue]Starting entity embedding computation...[/]")
 
-        # 获取实体名称的嵌入
+        # Get embeddings for entity names
         entity_texts = self.entities_df["title"].tolist()
         entity_embeddings = await self.get_embeddings(entity_texts)
 
         if entity_embeddings is None:
-            console.print("[red]错误: 无法获取实体嵌入，请检查 API[/]")
-            raise RuntimeError("无法获取实体嵌入，请检查 API")
+            console.print(
+                "[red]Error: Unable to get entity embeddings, please check the API[/]"
+            )
+            raise RuntimeError("Unable to get entity embeddings, please check the API")
 
         self.entities_df["embedding"] = entity_embeddings
         output_path = self.parquet_input_path / "entity_embeddings.npy"
         np.save(output_path, np.array(entity_embeddings))
-        console.print(f"[green]✓ 实体嵌入计算完成，结果已保存至: {output_path}[/]")
+        console.print(
+            f"[green]✓ Entity embedding computation completed, results saved to: {output_path}[/]"
+        )
 
     def _optimal_kmeans(self, X, max_k=10):
-        """使用肘部法和轮廓系数选择最优 K"""
-        console.print("[blue]正在计算最优聚类数量...[/]")
+        """Use the Elbow Method and Silhouette Score to select the optimal K"""
+        console.print("[blue]Calculating optimal number of clusters...[/]")
         distortions = []
         silhouette_scores = []
         K = range(2, max_k + 1)
@@ -273,7 +283,7 @@ class InferenceProcessor:
             distortions.append(kmeans.inertia_)
             silhouette_scores.append(silhouette_score(X, kmeans.labels_))
 
-        # 绘制肘部法和轮廓系数图表
+        # Plot Elbow Method and Silhouette Score charts
         plt.figure(figsize=(10, 5))
 
         plt.subplot(1, 2, 1)
@@ -290,30 +300,32 @@ class InferenceProcessor:
 
         # plt.show()
         best_k = silhouette_scores.index(max(silhouette_scores)) + 2
-        console.print(f"[green]✓ 最优聚类数量: {best_k}[/]")
+        console.print(f"[green]✓ Optimal number of clusters: {best_k}[/]")
         return best_k
 
     async def cluster_entities(self):
-        """使用 KMeans 进行聚类"""
-        console.print("[blue]开始聚类实体...[/]")
+        """Use KMeans for clustering"""
+        console.print("[blue]Starting entity clustering...[/]")
 
-        # 读取已计算的嵌入
+        # Read pre-computed embeddings
         embeddings_path = self.parquet_input_path / "entity_embeddings.npy"
         if not embeddings_path.exists():
-            console.print("[red]错误: 找不到嵌入文件，请先计算嵌入[/]")
+            console.print(
+                "[red]Error: Embeddings file not found, please compute embeddings first[/]"
+            )
             return
 
         embeddings = np.load(embeddings_path)
 
-        # 选择最优 K 值
+        # Select optimal K value
         optimal_k = self._optimal_kmeans(embeddings)
 
-        # 运行 KMeans 聚类
-        console.print(f"[blue]使用 K={optimal_k} 进行聚类...[/]")
+        # Run KMeans clustering
+        console.print(f"[blue]Clustering with K={optimal_k}...[/]")
         kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
         clusters = kmeans.fit_predict(embeddings)
 
-        # 绑定聚类结果到 DataFrame
+        # Bind clustering results to DataFrame
         self.entities_df["cluster"] = clusters
 
         selected_entities = await self.select_random_entities_per_cluster()
@@ -322,7 +334,7 @@ class InferenceProcessor:
             ["title", "description", "cluster"]
         ].to_dict(orient="records")
 
-        console.print("[blue]正在生成聚类名称...[/]")
+        console.print("[blue]Generating cluster names...[/]")
         clustered_entities_prompt = f"""
         Given a list of entities with their descriptions and cluster assignments:
         {selected_entities_records}
@@ -338,13 +350,13 @@ class InferenceProcessor:
         """
 
         with Progress() as progress:
-            task = progress.add_task("[green]生成聚类名称...", total=1)
-            # 调用 LLM API 生成聚类名称
+            task = progress.add_task("[green]Generating cluster names...", total=1)
+            # Call LLM API to generate cluster names
             content = await self.chat_client.chat.completions.create(
                 model=self.config.chat_model_name,
                 messages=[{"role": "user", "content": clustered_entities_prompt}],
             )
-            # 处理聚类名称
+            # Process cluster names
             cluster_names = content.choices[0].message.content.strip()
 
             cluster_names_dict = {
@@ -359,7 +371,7 @@ class InferenceProcessor:
                 self.entities_df["cluster"].astype(str).map(cluster_names_dict)
             )
 
-            # 保存聚类结果
+            # Save clustering results
             output_path = self.parquet_input_path / "clustered_entities.json"
             self.entities_df.to_json(
                 output_path, orient="records", force_ascii=False, indent=4
@@ -367,20 +379,22 @@ class InferenceProcessor:
 
             progress.update(task, advance=1)
 
-        console.print(f"[green]✓ 聚类完成，结果已保存至: {output_path}[/]")
+        console.print(
+            f"[green]✓ Clustering completed, results saved to: {output_path}[/]"
+        )
 
     async def select_random_entities_per_cluster(
-            self, max_entities_per_cluster=10
+        self, max_entities_per_cluster=10
     ) -> DataFrame:
-        """从每个 cluster 中随机选择最多 10 个实体"""
+        """Select up to 10 random entities from each cluster"""
 
-        # 按照 cluster 分组
+        # Group by cluster
         clustered_entities = self.entities_df.groupby("cluster")
 
         selected_entities = []
 
         for cluster_id, group in clustered_entities:
-            # 如果当前 cluster 的实体少于 max_entities_per_cluster，则取所有
+            # If there are fewer entities in the current cluster than max_entities_per_cluster, take all of them
             num_entities_to_select = min(len(group), max_entities_per_cluster)
 
             selected_entities_for_cluster = group.sample(
@@ -389,13 +403,13 @@ class InferenceProcessor:
 
             selected_entities.append(selected_entities_for_cluster)
 
-        # 合并所有选中的实体
+        # Merge all selected entities
         selected_entities_df = pd.concat(selected_entities, ignore_index=True)
 
         return selected_entities_df
 
     @staticmethod
     def _save_to_json(data, filename):
-        """保存数据到 JSON 文件"""
+        """Save data to JSON file"""
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)

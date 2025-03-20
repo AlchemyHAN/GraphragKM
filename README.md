@@ -1,44 +1,44 @@
-# GraphragKM - GraphRAG 驱动的 AI 本体生成工具
+# GraphragKM - AI Ontology Generation Tool Driven by GraphRAG
 
-GraphragKM 是一款基于 GraphRAG 的 AI 本体生成工具，能够从 PDF 文档中自动提取知识，并生成 OWL 本体和 UML 模型。它整合了文本提取、OCR 识别、图谱构建、推理等技术，为用户提供一站式知识图谱和本体生成解决方案。
+GraphragKM is an AI ontology generation tool based on GraphRAG that can automatically extract knowledge from PDF documents and generate OWL ontologies and UML models. It integrates text extraction, OCR recognition, graph construction, inference, and other technologies to provide users with a one-stop knowledge graph and ontology generation solution.
 
-## 功能特点
+## Features
 
-- **PDF 文档处理和文本提取**：支持从 PDF 文档中提取文本，获取关键信息。
-- **图像 OCR 识别**：支持图像中的文本提取，帮助识别扫描文档或图片中的内容。
-- **基于 GraphRAG 的知识图谱构建**：自动构建知识图谱，将知识以图谱的形式进行可视化。
-- **实体和关系推理**：从提取的文本和图像中推理出实体及其关系，构建更完整的知识图谱。
-- **自动生成 OWL 本体**：根据提取的信息自动构建 OWL 本体，支持语义推理和知识存储。
-- **自动生成 StarUML 类图**：将本体结构转换为 UML 类图，方便可视化理解和编辑。
+- **PDF Document Processing and Text Extraction**: Supports extracting text from PDF documents to obtain key information.
+- **Image OCR Recognition**: Supports text extraction from images, helping recognize content from scanned documents or pictures.
+- **GraphRAG-Based Knowledge Graph Construction**: Automatically constructs knowledge graphs and visualizes knowledge in graph form.
+- **Entity and Relationship Inference**: Infers entities and their relationships from extracted text and images to build a more complete knowledge graph.
+- **Automatic OWL Ontology Generation**: Automatically constructs OWL ontology from extracted information, supporting semantic reasoning and knowledge storage.
+- **Automatic StarUML Class Diagram Generation**: Converts ontology structures into UML class diagrams for easy visualization and editing.
 
-## 安装[README.md](README.md)
+## Installation
 
 ```bash
 pip install GraphragKM
 ```
 
-## 使用方法
+## Usage
 
-### 命令行使用
+### Command Line Usage
 
 ```bash
-# 交互式运行
+# Interactive run
 graphragkm run
 
-# 指定输入文件
+# Specify input file
 graphragkm run -i input.pdf
 ```
 
-### 生成文件
+### Generated Files
 
-运行后，程序会在当前目录的 output 文件夹下生成以下文件：
+After execution, the program will generate the following files in the `output` folder in the current directory:
 
-- `ontology.owl`：生成的 OWL 本体文件。
-- `uml_model.uml`：UML 类图文件（StarUML 格式）。
+- `ontology.owl`: The generated OWL ontology file.
+- `uml_model.uml`: The UML class diagram file (StarUML format).
 
-### 配置
+### Configuration
 
-首次运行时，程序会在当前目录创建`config.yaml`配置文件模板。您需要编辑此文件，填入正确的 API 密钥和其他配置信息。
+On the first run, the program will create a `config.yaml` configuration file template in the current directory. You need to edit this file and fill in the correct API keys and other configuration information.
 
 ```yaml
 api:
@@ -65,7 +65,7 @@ app:
   max_concurrent_requests: 25
 ```
 
-## 依赖项
+## Dependencies
 
 - Python 3.11+
 - graphrag
@@ -76,4 +76,4 @@ app:
 - rich
 - click
 - scikit-learn
-- 完整依赖项请参见 pyproject.toml
+- For a full list of dependencies, see `pyproject.toml`
