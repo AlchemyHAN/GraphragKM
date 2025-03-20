@@ -12,10 +12,10 @@ console = Console()
 class OWLGenerator:
     def __init__(self, config: Config, input_path, output_file_name="ontology.owl"):
         """
-        初始化 OWL 生成器
-        :param input_path: 输入 JSON 文件的路径
-        :param config: 配置对象
-        :param output_file_name: 生成的 OWL 文件名
+        Initialize OWL generator
+        :param input_path: Path to input JSON file
+        :param config: Configuration object
+        :param output_file_name: Generated OWL filename
         """
         self.input_path = input_path
         self.output_file_name = output_file_name
@@ -26,30 +26,30 @@ class OWLGenerator:
 
         self.graph = Graph()
 
-        # OWL 命名空间 - 从配置中获取
+        # OWL namespace - get from configuration
         self.owl_ns = config.owl_namespace if config else "https://example.com/"
 
     def load_json(self, file_path):
-        """加载 JSON 文件"""
+        """Load JSON file"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
-            console.print(f"[red]错误: 找不到文件: {file_path}[/]")
+            console.print(f"[red]Error: File not found: {file_path}[/]")
             raise
         except json.JSONDecodeError:
-            console.print(f"[red]错误: JSON 格式错误: {file_path}[/]")
+            console.print(f"[red]Error: JSON format error: {file_path}[/]")
             raise
 
     def generate_ontology(self):
-        """生成 OWL 本体"""
+        """Generate OWL ontology"""
         attributes_data = self.load_json(self.attributes_file)
         relations_data = self.load_json(self.relations_file)
         clusters_data = self.load_json(self.clusters_file)
 
         entity_names = {entity["name"] for entity in attributes_data}
 
-        # 1️⃣ 创建 Cluster 父类
+        # 1️⃣ Create Cluster parent class
         cluster_classes = {}
         for entity in clusters_data:
             cluster_id = entity["cluster"]
@@ -67,20 +67,20 @@ class OWLGenerator:
                 self.graph.add((cluster_uri, RDFS.label, Literal(cluster_name)))
                 cluster_classes[cluster_name] = cluster_uri
 
-        # 2️⃣ 处理实体（Class）
+        # 2️⃣ Process entities (Class)
         entity_map = {}
         for entity in attributes_data:
             entity_name = entity["name"].replace(" ", "_")
             entity_uri = URIRef(f"{self.owl_ns}{entity_name}")
             entity_map[entity["name"]] = entity_uri
 
-            # 设定为 OWL 类
+            # Set as OWL class
             self.graph.add(
                 (entity_uri, RDF.type, URIRef("http://www.w3.org/2002/07/owl#Class"))
             )
             self.graph.add((entity_uri, RDFS.label, Literal(entity["name"])))
 
-            # 添加描述
+            # Add description
             if "description" in entity:
                 self.graph.add(
                     (entity_uri, RDFS.comment, Literal(entity["description"]))
@@ -96,7 +96,7 @@ class OWLGenerator:
                         (entity_uri, RDFS.subClassOf, cluster_classes[cluster_name])
                     )
 
-            # 3️⃣ 处理属性（DatatypeProperty）
+            # 3️⃣ Process attributes (DatatypeProperty)
             for attr, attr_type in entity["attr"].items():
                 attr_uri = URIRef(f"{self.owl_ns}{attr.replace(' ', '_')}")
                 self.graph.add(
@@ -116,7 +116,7 @@ class OWLGenerator:
                 )
                 self.graph.add((attr_uri, RDFS.label, Literal(attr)))
 
-        # 4️⃣ 处理关系（ObjectProperty）
+        # 4️⃣ Process relationships (ObjectProperty)
         valid_relations = [
             relation
             for relation in relations_data
@@ -124,7 +124,7 @@ class OWLGenerator:
         ]
 
         console.print(
-            f"[blue]处理 {len(valid_relations)} 个有效关系（共 {len(relations_data)} 个关系）[/]"
+            f"[blue]Processing {len(valid_relations)} valid relationships (out of {len(relations_data)} total relationships)[/]"
         )
 
         for relation in valid_relations:
@@ -151,20 +151,20 @@ class OWLGenerator:
             self.graph.add((relation_uri, RDFS.range, target_uri))
             self.graph.add((relation_uri, RDFS.label, Literal(relation_name)))
 
-            # 添加描述
+            # Add description
             if "description" in relation:
                 self.graph.add(
                     (relation_uri, RDFS.comment, Literal(relation["description"]))
                 )
 
     def save_ontology(self):
-        """保存 OWL 文件"""
+        """Save OWL file"""
         output_path = Path(self.input_path) / self.output_file_name
         self.graph.serialize(str(output_path), format="xml")
-        console.print(f"[green]✓ OWL 文件已保存: {output_path}[/]")
+        console.print(f"[green]✓ OWL file saved: {output_path}[/]")
 
     def run(self):
-        """执行 OWL 生成全过程"""
-        console.print("[blue]开始生成 OWL 本体...[/]")
+        """Execute the entire OWL generation process"""
+        console.print("[blue]Starting OWL ontology generation...[/]")
         self.generate_ontology()
         self.save_ontology()

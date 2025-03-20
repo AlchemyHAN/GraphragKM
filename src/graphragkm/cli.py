@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-graphragkm - GraphRAG驱动的AI本体生成工具
-命令行界面
+graphragkm - GraphRAG-driven AI Ontology Generation Tool
+Command Line Interface
 """
 import sys
 from typing import Optional
@@ -9,45 +9,45 @@ from typing import Optional
 import click
 from rich.console import Console
 
-# 导入主模块
+# Import main module
 from .main import main_entry
 
 console = Console()
 
 
-@click.group(help="graphragkm - GraphRAG驱动的AI本体生成工具")
+@click.group(help="graphragkm - GraphRAG-driven AI Ontology Generation Tool")
 def cli():
-    """AIOntology命令行工具入口点"""
+    """AIOntology command line tool entry point"""
     pass
 
 
-@cli.command(name="run", help="初始化并运行本体生成流程")
+@cli.command(name="run", help="Initialize and run ontology generation process")
 @click.option(
     "--input-pdf",
     "-i",
     type=click.Path(exists=True, dir_okay=False),
-    help="输入的PDF文件路径",
+    help="Input PDF file path",
 )
 def init_command(input_pdf: Optional[str]):
-    """初始化并运行本体生成流程"""
-    # 直接调用主函数
+    """Initialize and run ontology generation process"""
+    # Directly call main function
     main_entry(input_pdf)
 
 
-@cli.command(name="version", help="显示版本信息")
+@cli.command(name="version", help="Show version information")
 def version():
-    """显示版本信息"""
+    """Show version information"""
     from . import __version__
 
-    console.print(f"[green]graphragkm 版本: {__version__}[/]")
+    console.print(f"[green]graphragkm version: {__version__}[/]")
 
 
 def main():
-    """命令行入口点"""
+    """Command line entry point"""
     try:
         cli()
     except Exception as e:
-        console.print(f"[red]错误: {str(e)}[/]")
+        console.print(f"[red]Error: {str(e)}[/]")
         sys.exit(1)
 
 

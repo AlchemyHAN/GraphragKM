@@ -15,10 +15,10 @@ console = Console()
 class PDFProcessor:
     def __init__(self, config_path: Optional[str] = None):
         """
-        初始化PDF处理器
+        Initialize PDF processor
 
         Args:
-            config_path: 配置文件路径，默认为当前目录下的config.yaml
+            config_path: Configuration file path, defaults to config.yaml in the current directory
         """
         if config_path is None:
             config_path = Path(__file__).resolve().parents[2] / "config.yaml"
@@ -30,9 +30,11 @@ class PDFProcessor:
         }
 
     def process_pdf(self, file_path: str, output_dir: str) -> None:
-        """处理PDF文件的主函数"""
+        """Main function for processing PDF files"""
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        console.print(f"[blue]开始处理PDF文件: {os.path.basename(file_path)}[/]")
+        console.print(
+            f"[blue]Starting PDF processing: {os.path.basename(file_path)}[/]"
+        )
 
         batch_id = self._request_upload_url(file_path)
         if not batch_id:
@@ -42,10 +44,12 @@ class PDFProcessor:
             return
 
         self._download_and_extract_results(batch_id, output_dir)
-        console.print(f"[green]✓ PDF处理完成，结果保存在: {output_dir}[/]")
+        console.print(
+            f"[green]✓ PDF processing completed, results saved to: {output_dir}[/]"
+        )
 
     def _request_upload_url(self, file_path: str) -> Optional[str]:
-        """请求上传URL"""
+        """Request upload URL"""
         upload_request_data = {
             "enable_formula": True,
             "language": self.config.doc_language,
@@ -57,7 +61,7 @@ class PDFProcessor:
         }
 
         try:
-            console.print("[blue]正在请求上传URL...[/]")
+            console.print("[blue]Requesting upload URL...[/]")
             response = requests.post(
                 self.config.mineru_upload_url,
                 headers=self.headers,
@@ -66,57 +70,59 @@ class PDFProcessor:
             result = response.json()
 
             if response.status_code != 200 or result["code"] != 0:
-                raise Exception(f"申请上传URL失败: {result.get('msg', '未知错误')}")
+                raise Exception(
+                    f"Failed to request upload URL: {result.get('msg', 'Unknown error')}"
+                )
 
             batch_id = result["data"]["batch_id"]
             file_url = result["data"]["file_urls"][0]
 
-            # 上传PDF文件
-            console.print("[blue]正在上传PDF文件...[/]")
+            # Upload PDF file
+            console.print("[blue]Uploading PDF file...[/]")
             with open(file_path, "rb") as f:
                 res_upload = requests.put(file_url, data=f)
 
             if res_upload.status_code != 200:
-                raise Exception(f"文件上传失败: {res_upload.status_code}")
+                raise Exception(f"File upload failed: {res_upload.status_code}")
 
-            console.print("[green]✓ 文件上传成功[/]")
+            console.print("[green]✓ File upload successful[/]")
             return batch_id
 
         except Exception as e:
-            console.print(f"[red]错误: {e}[/]")
+            console.print(f"[red]Error: {e}[/]")
             return None
 
     def _wait_for_processing(self, batch_id: str) -> bool:
-        """等待处理完成"""
+        """Wait for processing to complete"""
         result_url = self.config.mineru_results_url_template.format(batch_id)
-        console.print("[blue]正在等待服务器处理文件...[/]")
+        console.print("[blue]Waiting for server to process file...[/]")
 
         while True:
             try:
                 response = requests.get(result_url, headers=self.headers)
                 if response.status_code != 200:
-                    raise Exception(f"查询状态失败: {response.status_code}")
+                    raise Exception(f"Failed to query status: {response.status_code}")
 
                 result = response.json()
                 extract_results = result["data"]["extract_result"]
 
                 if self._check_processing_complete(extract_results):
-                    console.print("[green]✓ 服务器处理完成[/]")
+                    console.print("[green]✓ Server processing completed[/]")
                     return True
 
             except Exception as e:
-                console.print(f"[red]错误: 查询处理状态时出错: {e}[/]")
+                console.print(f"[red]Error: Failed to query processing status: {e}[/]")
                 return False
 
             time.sleep(5)
 
     def _check_processing_complete(self, extract_results: list) -> bool:
-        """检查处理是否完成"""
+        """Check if processing is completed"""
         for result in extract_results:
             state = result.get("state", "unknown")
             if state == "failed":
                 console.print(
-                    f"[red]错误: 处理失败: {result.get('err_msg', '未知错误')}[/]"
+                    f"[red]Error: Processing failed: {result.get('err_msg', 'Unknown error')}[/]"
                 )
                 return False
             elif state != "done":
@@ -124,34 +130,36 @@ class PDFProcessor:
         return True
 
     def _download_and_extract_results(self, batch_id: str, output_dir: str) -> None:
-        """下载并解压结果"""
+        """Download and extract results"""
         result_url = self.config.mineru_results_url_template.format(batch_id)
-        console.print("[blue]正在获取处理结果...[/]")
+        console.print("[blue]Retrieving processing results...[/]")
         response = requests.get(result_url, headers=self.headers)
         result = response.json()
 
         file_url = result["data"]["extract_result"][0].get("full_zip_url")
         if not file_url:
-            console.print("[red]错误: 未找到下载URL[/]")
+            console.print("[red]Error: Download URL not found[/]")
             return
 
         output_zip_path = Path(output_dir) / "result.zip"
 
-        # 下载文件
-        console.print("[blue]正在下载结果文件...[/]")
+        # Download file
+        console.print("[blue]Downloading result file...[/]")
         response = requests.get(file_url, headers=self.headers, stream=True)
         if response.status_code == 200:
             with open(output_zip_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
 
-            # 解压文件
-            console.print("[blue]正在解压文件...[/]")
+            # Extract file
+            console.print("[blue]Extracting file...[/]")
             with zipfile.ZipFile(output_zip_path, "r") as zip_ref:
                 zip_ref.extractall(output_dir)
 
-            # 删除zip文件
+            # Delete zip file
             output_zip_path.unlink()
-            console.print("[green]✓ 结果文件解压完成[/]")
+            console.print("[green]✓ Result file extraction completed[/]")
         else:
-            console.print(f"[red]错误: 下载失败，状态码: {response.status_code}[/]")
+            console.print(
+                f"[red]Error: Download failed, status code: {response.status_code}[/]"
+            )

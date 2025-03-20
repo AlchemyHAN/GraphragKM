@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-graphragkm - GraphRAG驱动的AI本体生成工具
+graphragkm - GraphRAG-driven AI Ontology Generation Tool
 """
 from setuptools import setup
 

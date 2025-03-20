@@ -1,5 +1,5 @@
 """
-配置模块
+Configuration module
 """
 
 from dataclasses import dataclass
@@ -11,7 +11,7 @@ import yaml
 
 @dataclass
 class Config:
-    """配置类"""
+    """Configuration class"""
 
     # Mineru API settings
     mineru_upload_url: str
@@ -38,13 +38,13 @@ class Config:
 
     @classmethod
     def from_yaml(cls, config_path: Union[str, Path]) -> "Config":
-        """从YAML文件加载配置"""
-        # 确保config_path是Path对象
+        """Load configuration from YAML file"""
+        # Ensure config_path is a Path object
         if isinstance(config_path, str):
             config_path = Path(config_path)
 
         if not config_path.exists():
-            raise FileNotFoundError(f"配置文件不存在: {config_path}")
+            raise FileNotFoundError(f"Configuration file does not exist: {config_path}")
 
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
@@ -76,7 +76,7 @@ class Config:
 
     @property
     def required_fields(self) -> list[str]:
-        """获取所有必需的配置字段"""
+        """Get all required configuration fields"""
         return [
             "mineru_upload_url",
             "mineru_results_url_template",
@@ -93,12 +93,12 @@ class Config:
         ]
 
     def validate(self) -> Tuple[bool, Optional[str]]:
-        """验证配置是否完整
+        """Validate if configuration is complete
 
         Returns:
-            Tuple[bool, Optional[str]]: (是否有效, 错误信息)
+            Tuple[bool, Optional[str]]: (is_valid, error_message)
         """
         for field in self.required_fields:
             if not getattr(self, field, None):
-                return False, f"缺少必需的配置项: {field}"
+                return False, f"Missing required configuration item: {field}"
         return True, None
