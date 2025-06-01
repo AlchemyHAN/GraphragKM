@@ -18,6 +18,7 @@ from .config.config import Config
 from .inference_processor import InferenceProcessor
 from .owl_generator import OWLGenerator
 from .uml_generator import PlantUMLGenerator
+from .knowledge_enricher import KnowledgeEnricher
 
 DEFAULT_OUTPUT_DIR = "output"
 MD_OUTPUT_FILENAME = "output.md"
@@ -324,6 +325,15 @@ def main_entry(input_pdf: Optional[str] = None):
 
     owl_generator = OWLGenerator(config=config, input_path=str(output_dir_path))
     owl_generator.run()
+
+    # Knowledge Enrichment
+    console.print("[cyan]Starting knowledge enrichment...[/]")
+    knowledge_enricher = KnowledgeEnricher(
+        config=config,
+        input_path=str(output_dir_path / "ontology.owl"),
+        output_path=str(output_dir_path / "enriched_ontology.owl"),
+    )
+    asyncio.run(knowledge_enricher.run())
 
     uml_generator = PlantUMLGenerator(str(output_dir_path))
     uml_generator.run()

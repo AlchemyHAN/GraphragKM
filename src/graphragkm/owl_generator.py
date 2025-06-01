@@ -20,7 +20,7 @@ class OWLGenerator:
         self.input_path = input_path
         self.output_file_name = output_file_name
         self.attributes_file = f"{input_path}/inferred_attributes.json"
-        self.relations_file = f"{input_path}/inferred_relations.json"
+        self.relations_file = f"{input_path}/merged_relations.json"
         self.clusters_file = f"{input_path}/clustered_entities.json"
         self.config = config
 
@@ -56,7 +56,11 @@ class OWLGenerator:
             cluster_name = entity["cluster_name"]
             cluster_uri = URIRef(f"{self.owl_ns}{cluster_name}")
 
-            if cluster_name not in cluster_classes:
+            if (
+                cluster_name
+                and cluster_name != "None"
+                and cluster_name not in cluster_classes
+            ):
                 self.graph.add(
                     (
                         cluster_uri,
@@ -89,12 +93,13 @@ class OWLGenerator:
             cluster_info = next(
                 (e for e in clusters_data if e["title"] == entity["name"]), None
             )
-            if cluster_info:
-                cluster_name = cluster_info["cluster_name"]
-                if cluster_name in cluster_classes:
-                    self.graph.add(
-                        (entity_uri, RDFS.subClassOf, cluster_classes[cluster_name])
-                    )
+            cluster_name = cluster_info.get("cluster_name") if cluster_info else None
+
+            if cluster_name and cluster_name != "None":
+                parent_class_uri = cluster_classes.get(cluster_name)
+
+                if parent_class_uri:
+                    self.graph.add((entity_uri, RDFS.subClassOf, parent_class_uri))
 
             # 3️⃣ Process attributes (DatatypeProperty)
             for attr, attr_type in entity["attr"].items():
@@ -117,10 +122,12 @@ class OWLGenerator:
                 self.graph.add((attr_uri, RDFS.label, Literal(attr)))
 
         # 4️⃣ Process relationships (ObjectProperty)
+        relations_data = relations_data["relations"]
         valid_relations = [
             relation
             for relation in relations_data
-            if relation["source"] in entity_names and relation["target"] in entity_names
+            if relation["new_source"] in entity_names
+            and relation["new_target"] in entity_names
         ]
 
         console.print(
@@ -128,15 +135,15 @@ class OWLGenerator:
         )
 
         for relation in valid_relations:
-            source = relation["source"].replace(" ", "_")
-            target = relation["target"].replace(" ", "_")
+            source = relation["new_source"].replace(" ", "_")
+            target = relation["new_target"].replace(" ", "_")
             relation_name = relation["relation"].replace(" ", "_")
 
             source_uri = entity_map.get(
-                relation["source"], URIRef(f"{self.owl_ns}{source}")
+                relation["new_source"], URIRef(f"{self.owl_ns}{source}")
             )
             target_uri = entity_map.get(
-                relation["target"], URIRef(f"{self.owl_ns}{target}")
+                relation["new_target"], URIRef(f"{self.owl_ns}{target}")
             )
             relation_uri = URIRef(f"{self.owl_ns}{relation_name}")
 

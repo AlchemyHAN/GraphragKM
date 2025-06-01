@@ -18,7 +18,7 @@ class PlantUMLGenerator:
         self.input_path = input_path
         self.output_file_name = output_file_name
         self.attributes_file = os.path.join(input_path, "inferred_attributes.json")
-        self.relations_file = os.path.join(input_path, "inferred_relations.json")
+        self.relations_file = os.path.join(input_path, "merged_relations.json")
         self.clusters_file = os.path.join(input_path, "clustered_entities.json")
 
     def load_json(self, file_path):
@@ -119,17 +119,20 @@ class PlantUMLGenerator:
         # Filter valid relationships
         valid_relations = [
             relation
-            for relation in relations_data
-            if relation["source"] in entity_names and relation["target"] in entity_names
+            for relation in relations_data["relations"]
+            if relation["new_source"] in entity_names
+            and relation["new_target"] in entity_names
         ]
 
+        total_relations = len(relations_data["relations"])
+
         console.print(
-            f"[blue]Processing {len(valid_relations)} valid relationships (out of {len(relations_data)} total relationships)[/]"
+            f"[blue]Processing {len(valid_relations)} valid relationships (out of {total_relations} total relationships)[/]"
         )
 
         for relation in valid_relations:
-            source_safe = self.safe_name(relation["source"])
-            target_safe = self.safe_name(relation["target"])
+            source_safe = self.safe_name(relation["new_source"])
+            target_safe = self.safe_name(relation["new_target"])
             relation_name = relation["relation"]
             lines.append(f"{source_safe} --> {target_safe} : {relation_name}")
 

@@ -3,7 +3,7 @@ name = "GraphragKM"
 version = "0.1.2"
 description = "GraphRAG-driven AI Ontology Generation Tool"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = "==3.11.*"
 license = { text = "MIT" }
 dependencies = [
     "openai (>=1.65.4,<2.0.0)",
@@ -21,6 +21,12 @@ dependencies = [
     "pillow (>=11.1.0,<12.0.0)",
     "requests (>=2.32.3,<3.0.0)",
     "opencv-python-headless (>=4.11.0.86,<5.0.0.0)",
+    "owlready2 (>=0.47,<0.48)",
+    "networkx (>=3.4.2,<4.0.0)",
+    "pykeen (>=1.11.1,<2.0.0)",
+    "faiss-cpu (>=1.11.0,<2.0.0)",
+    "sentence-transformers (>=4.1.0,<5.0.0)",
+    "pytesseract>=0.3.13",
 ]
 
 [tool.poetry]

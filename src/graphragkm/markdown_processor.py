@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
+import pytesseract
 from PIL import Image
 from rich.console import Console
 
@@ -18,11 +18,13 @@ class MarkdownProcessor:
         Args:
             base_path: Base path where Markdown files are located
         """
-        from easyocr import Reader
 
         self.base_path = Path(base_path)
-        console.print("[blue]Initializing OCR engine...[/]")
-        self.reader = Reader(["ch_sim", "en"], gpu=False)
+        console.print(
+            "[yellow]Info: MarkdownProcessor now uses Tesseract OCR. "
+            "Ensure Tesseract is installed and in your PATH, "
+            "or set pytesseract.tesseract_cmd.[/]"
+        )
 
     def process_markdown_file(self, input_path: str, output_path: str) -> None:
         """Process Markdown file"""
@@ -106,27 +108,44 @@ class MarkdownProcessor:
         """
 
     def _extract_text_from_image(self, img_path: str) -> Optional[str]:
-        """Extract text from image"""
+        """Extract text from image with robustness using Tesseract"""
         full_path = self.base_path / img_path
+
         if not full_path.exists():
             console.print(f"[yellow]Warning: Image file not found: {full_path}[/]")
             return None
 
         try:
-            image = Image.open(full_path)
-            image = np.array(image)
-            result = self.reader.readtext(image)
+            console.print(f"[cyan]Processing image with Tesseract: {full_path.name}[/]")
 
-            if not result:
+            image = Image.open(full_path).convert("RGB")
+
+            # Resize large image to prevent memory issues and improve OCR
+            image.thumbnail(
+                (2000, 2000), Image.Resampling.LANCZOS
+            )  # Increased size for potentially better OCR
+
+            # Use Tesseract to extract text
+            # You might need to specify the language, e.g., lang='eng' for English
+            # Add --psm X to specify page segmentation mode if needed
+            text = pytesseract.image_to_string(image, lang="eng")
+
+            if not text or text.isspace():
+                console.print(
+                    f"[yellow]Warning: No text found in {full_path.name} using Tesseract[/]"
+                )
                 return None
 
-            text = ""
-            for detection in result:
-                text += detection[1] + "\n"
-
             return text.strip()
+
+        except pytesseract.TesseractNotFoundError:
+            console.print(
+                "[red]Error: Tesseract is not installed or not in your PATH. "
+                "Please install Tesseract and make sure it's accessible."
+            )
+            return None
         except Exception as e:
             console.print(
-                f"[red]Error: Failed to process image {img_path}: {str(e)}[/]"
+                f"[red]Error processing image {img_path} with Tesseract: {e}[/]"
             )
             return None

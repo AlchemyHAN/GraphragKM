@@ -73,7 +73,6 @@ class PDFProcessor:
                 raise Exception(
                     f"Failed to request upload URL: {result.get('msg', 'Unknown error')}"
                 )
-
             batch_id = result["data"]["batch_id"]
             file_url = result["data"]["file_urls"][0]
 
@@ -90,7 +89,7 @@ class PDFProcessor:
 
         except Exception as e:
             console.print(f"[red]Error: {e}[/]")
-            return None
+            exit(1)
 
     def _wait_for_processing(self, batch_id: str) -> bool:
         """Wait for processing to complete"""
