@@ -181,4 +181,4 @@ config.yaml
 settings.yaml
 prompts/
 
-output\lancedb
+output\\lancedb
